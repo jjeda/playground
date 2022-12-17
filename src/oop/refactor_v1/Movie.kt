@@ -26,12 +26,29 @@ enum class DisCountConditionType {
 }
 
 class DisCountCondition(
-  val type: DisCountConditionType,
-  val sequence: Int,
-  val dayOfWeek: DayOfWeek,
-  val startTime: LocalTime,
-  val endTime: LocalTime,
-)
+  private val type: DisCountConditionType,
+  private val sequence: Int,
+  private val dayOfWeek: DayOfWeek,
+  private val startTime: LocalTime,
+  private val endTime: LocalTime,
+) {
+  fun isDiscountable(screening: Screening): Boolean {
+    if (type == DisCountConditionType.PERIOD) {
+      return isSatisfiedByPeriod(screening)
+    }
+    return isSatisfiedBySequence(screening)
+  }
+
+  private fun isSatisfiedByPeriod(screening: Screening): Boolean {
+    return screening.whenScreened.dayOfWeek == this.dayOfWeek &&
+      this.startTime <= screening.whenScreened.toLocalTime() &&
+      this.endTime >= screening.whenScreened.toLocalTime()
+  }
+
+  private fun isSatisfiedBySequence(screening: Screening): Boolean {
+    return this.sequence == screening.sequence
+  }
+}
 
 class Screening(
   val movie: Movie,
@@ -65,24 +82,7 @@ class ReservationAgency {
   private fun checkDiscountable(screening: Screening): Boolean {
     val movie = screening.movie
 
-    return movie.discountConditions.any { isDiscountable(it, screening) }
-  }
-
-  private fun isDiscountable(disCountCondition: DisCountCondition, screening: Screening): Boolean {
-    if (disCountCondition.type == DisCountConditionType.PERIOD) {
-      return isSatisfiedByPeriod(disCountCondition, screening)
-    }
-    return isSatisfiedBySequence(disCountCondition, screening)
-  }
-
-  private fun isSatisfiedByPeriod(condition: DisCountCondition, screening: Screening): Boolean {
-    return screening.whenScreened.dayOfWeek == condition.dayOfWeek &&
-      condition.startTime <= screening.whenScreened.toLocalTime() &&
-      condition.endTime >= screening.whenScreened.toLocalTime()
-  }
-
-  private fun isSatisfiedBySequence(condition: DisCountCondition, screening: Screening): Boolean {
-    return condition.sequence == screening.sequence
+    return movie.discountConditions.any { it.isDiscountable(screening) }
   }
 
   private fun calculateFee(
