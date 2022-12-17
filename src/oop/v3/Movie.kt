@@ -6,43 +6,21 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 
 class Movie(
-  private val movieType: MovieType,
   private val title: String,
   private val runningTime: Duration,
   private val fee: Money,
+  private val discountPolicy: DiscountPolicy,
   private val discountConditions: List<DisCountCondition>,
-  private val discountAmount: Money,
-  private val discountPercent: Double,
 ) {
   fun calculateMovieFee(screening: Screening): Money {
     if (isDiscountable(screening)) {
-      return fee - calculateDiscountAmount()
+      return fee - discountPolicy.calculateDiscountAmount()
     }
     return fee
   }
 
   private fun isDiscountable(screening: Screening): Boolean {
     return discountConditions.any { it.isSatisfiedBy(screening) }
-  }
-
-  private fun calculateDiscountAmount(): Money {
-    return when (movieType) {
-      MovieType.AMOUNT_DISCOUNT -> calculateAmountDiscountAmount()
-      MovieType.PERCENT_DISCOUNT -> calculatePercentDiscountAmount()
-      MovieType.NONE_DISCOUNT -> calculateNoneDiscountAmount()
-    }
-  }
-
-  private fun calculateAmountDiscountAmount(): Money {
-    return discountAmount
-  }
-
-  private fun calculatePercentDiscountAmount(): Money {
-    return fee * discountPercent
-  }
-
-  private fun calculateNoneDiscountAmount(): Money {
-    return Money.ZERO
   }
 }
 
@@ -56,29 +34,56 @@ enum class DisCountConditionType {
   SEQUENCE, PERIOD
 }
 
-class DisCountCondition(
-  private val type: DisCountConditionType,
-  private val sequence: Int,
+interface DiscountPolicy {
+  fun calculateDiscountAmount(): Money
+}
+
+class AmountDiscountPolicy(
+  private val discountAmount: Money,
+) : DiscountPolicy {
+  override fun calculateDiscountAmount(): Money {
+    return discountAmount
+  }
+}
+
+class PercentDiscountPolicy(
+  private val fee: Money,
+  private val discountPercent: Double,
+) : DiscountPolicy {
+  override fun calculateDiscountAmount(): Money {
+    return fee * discountPercent
+  }
+}
+
+class NoneDiscountPolicy : DiscountPolicy {
+  override fun calculateDiscountAmount(): Money {
+    return Money.ZERO
+  }
+}
+
+interface DisCountCondition {
+  fun isSatisfiedBy(screening: Screening): Boolean
+}
+
+class PeriodCondition(
   private val dayOfWeek: DayOfWeek,
   private val startTime: LocalTime,
   private val endTime: LocalTime,
-) {
-  fun isSatisfiedBy(screening: Screening): Boolean {
-    if (type == DisCountConditionType.PERIOD) {
-      return isSatisfiedByPeriod(screening)
-    }
-    return isSatisfiedBySequence(screening)
-  }
-
-  private fun isSatisfiedByPeriod(screening: Screening): Boolean {
+) : DisCountCondition {
+  override fun isSatisfiedBy(screening: Screening): Boolean {
     val time = screening.whenScreened.toLocalTime()
     return this.dayOfWeek == dayOfWeek && startTime <= time && endTime >= time
   }
+}
 
-  private fun isSatisfiedBySequence(screening: Screening): Boolean {
+class SequenceCondition(
+  private val sequence: Int
+) : DisCountCondition {
+  override fun isSatisfiedBy(screening: Screening): Boolean {
     return sequence == screening.sequence
   }
 }
+
 
 class Screening(
   private val movie: Movie,
