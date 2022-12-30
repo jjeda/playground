@@ -9,18 +9,12 @@ class FrontEndProgrammer : Programmer {
   private lateinit var library: Library
 
   override fun makeProgram(paper: Paper): Program {
-    if (paper is ClientPaper) {
-      val clientPaper = paper
-      language = paper.language
-      library = paper.library
-    }
-
+    paper.setData(this)
     return makeFrontEndProgram()
   }
-
-  private fun makeFrontEndProgram(): Program {
-    return Program()
-  }
+  fun setLanguage(language: Language) { this.language = language }
+  fun setLibrary(library: Library) { this.library = library }
+  private fun makeFrontEndProgram() = Program()
 }
 
 class BackEndProgrammer : Programmer {
@@ -28,18 +22,12 @@ class BackEndProgrammer : Programmer {
   private lateinit var server: Server
 
   override fun makeProgram(paper: Paper): Program {
-    if (paper is ServerClientPaper) {
-      val serverClientPaper = paper
-      language = paper.backEndLanguage
-      server = paper.server
-    }
-
+    paper.setData(this)
     return makeBackEndProgram()
   }
-
-  private fun makeBackEndProgram(): Program {
-    return Program()
-  }
+  fun setServer(server: Server) { this.server = server }
+  fun setLanguage(language: Language) { this.language = language }
+  private fun makeBackEndProgram() = Program()
 }
 
 class Program()
