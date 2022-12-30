@@ -1,34 +1,29 @@
 package oop.programmer
 
-interface Paper<T : Programmer> {
-  fun setData(programmer: T)
-}
+interface Paper
 
-class ClientPaper(
-  var programmer: Programmer
-) : Paper<FrontEndProgrammer> {
-  private val library = Library("vueJS")
-  private val language = Language("kotlinJS")
-  override fun setData(programmer: FrontEndProgrammer) {
-    programmer.setLibrary(library)
-    programmer.setLanguage(language)
+class ClientPaper() : Paper {
+  val library = Library("vueJS")
+  val language = Language("kotlinJS")
+  private lateinit var programmer: Programmer<ClientPaper>
+  fun setProgrammer(programmer: Programmer<ClientPaper>) {
+    this.programmer = programmer
   }
 }
 
-class ServerClientPaper(
-  var frontEndProgrammer: Programmer,
-  var backEndProgrammer: Programmer,
-) : Paper<FrontEndProgrammer, BackEndProgrammer> { // 이 부분을 해결할 수 없음..
-  private val server = Server("test")
-  private val frontEndLanguage = Language("kotlin")
-  private val backEndLanguage = Language("kotlin")
-  override fun setData(programmer: Programmer) {
-    if (programmer is FrontEndProgrammer) {
-      programmer.setLanguage(frontEndLanguage)
-    } else if (programmer is BackEndProgrammer) {
-      programmer.setLanguage(backEndLanguage)
-      programmer.setServer(server)
-    }
+class ServerClientPaper() : Paper {
+  val server = Server("test")
+  val frontEndLanguage = Language("kotlin")
+  val backEndLanguage = Language("kotlin")
+  private lateinit var frontEndProgrammer: Programmer<ServerClientPaper>
+  private lateinit var backEndProgrammer: Programmer<ServerClientPaper>
+
+  fun setBackEndProgrammer(programmer: Programmer<ServerClientPaper>) {
+    this.backEndProgrammer = programmer
+  }
+
+  fun setFrontEndProgrammer(programmer: Programmer<ServerClientPaper>) {
+    this.frontEndProgrammer = programmer
   }
 }
 
